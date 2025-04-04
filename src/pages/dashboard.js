@@ -22,7 +22,7 @@ const Dashboard = () => {
   const [token, setToken] = useState(null);
   const router = useRouter();
   const [results, setResults] = useState([]);
-
+  const [username, setUsername] = useState("");
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [album, setAlbum] = useState("");
@@ -98,8 +98,11 @@ const Dashboard = () => {
   useEffect(() => {
     const storedData = localStorage.getItem("token");
     if (storedData) {
+      setUsername(localStorage.getItem("username"));
       setToken(storedData);
       getMusic(storedData);
+    } else {
+      handleLogout();
     }
   }, []);
 
@@ -115,7 +118,7 @@ const Dashboard = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Search Form */}
+      <Typography variant='h6'>Welcome {username},</Typography>
       <Box
         my={4}
         component='form'
