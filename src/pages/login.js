@@ -19,7 +19,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${config.url}/music_login`, {
+      const response = await axios.post(`${config.url}/login`, {
         email,
         password,
       });
@@ -28,7 +28,7 @@ const Login = () => {
         setError("");
         localStorage.setItem("token", response.data.body.token);
         localStorage.setItem("username", response.data.body.userName);
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setError(response.data.body.error);
       }

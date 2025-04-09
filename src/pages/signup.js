@@ -35,7 +35,7 @@ const Signup = () => {
       }
     } catch (error) {
       setError(error.response?.data || "An error occurred");
-      console.error("Signup error:", error);
+      console.log("Signup error:", error);
     }
   };
 

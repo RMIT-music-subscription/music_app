@@ -14,6 +14,7 @@ import {
   Container,
   Box,
   Snackbar,
+  CircularProgress,
 } from "@mui/material";
 
 import { config } from "@/lib/constant";
@@ -29,33 +30,60 @@ const Dashboard = () => {
   const [year, setYear] = useState("");
   const [subscribe, setSubscribe] = useState(true);
   const [message, setMessage] = useState("");
+  const [imgBase64, setImgBase64] = useState({});
+  const [loading, setLoading] = useState(false);
+
   // Fetch user's subscribed music
   const getMusic = async (storedData) => {
     try {
-      const response = await axios.get("/api/list", {
-        headers: { Authorization: `Bearer ${storedData}` },
+      setLoading(true);
+      const response = await axios.post(`${config.url}/list`, {
+        token: storedData,
       });
+
+      if (response.data.body) {
+        setResults(response.data.body.music);
+        setImgBase64(response.data.body.img_base64);
+      } else {
+        setMessage(response.data.body.error);
+      }
       setSubscribe(true);
-      if (response.data.error) setResults("No subscription");
-      else
-        setResults(response.data.message || response.data || "No subscription");
+
+      setLoading(false);
     } catch (error) {
-      console.error("Error fetching subscriptions:", error);
+      setLoading(false);
+      console.log("Error fetching subscriptions::", error);
+      setMessage(error?.response?.data?.error || "Try again");
     }
   };
 
   // Handle search request
   const handleSearch = async () => {
     try {
+      setLoading(true);
       setResults([]);
       setSubscribe(false);
-      const response = await axios.get("/api/search", {
-        params: { title, artist, album, year },
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.post(`${config.url}/search`, {
+        title,
+        artist,
+        album,
+        year,
+        token,
       });
-      setResults(response.data);
+      console.log(response, "::");
+
+      if (!response.data.body.error) {
+        setResults(response.data.body.music);
+        setImgBase64(response.data.body.img_base64);
+      } else {
+        setMessage(response.data.body.error);
+      }
+
+      setLoading(false);
     } catch (error) {
-      console.error("Error searching:", error);
+      setLoading(false);
+      console.log("Error searching:", error);
+      setMessage(error?.response?.data?.error || "Try again");
     }
   };
 
@@ -67,28 +95,42 @@ const Dashboard = () => {
   };
 
   const handleSubscribe = async (music_id) => {
-    let response = null;
-    if (!subscribe) {
-      response = await axios.post(
-        "/api/subscribe",
-        {
+    try {
+      let response = null;
+      setLoading(true);
+      if (!subscribe) {
+        const response = await axios.post(`${config.url}/subscribe`, {
           music_id,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
+          token,
+        });
+        console.log(response, "::");
+
+        if (response.data.body) {
+          setMessage(response.data.body.message);
+        } else {
+          setMessage(response.data.body.error);
         }
-      );
-    } else {
-      response = await axios.delete("/api/subscribe", {
-        headers: { Authorization: `Bearer ${token}` },
-        data: {
-          music_id,
-        },
-      });
+      } else {
+        response = await axios.delete(`${config.url}/subscribe`, {
+          data: {
+            music_id,
+            token,
+          },
+        });
+        console.log(response, "::");
+        if (response.data.body) {
+          setMessage(response.data.body.message);
+        } else {
+          setMessage(response.data.body.error);
+        }
+      }
+
+      setLoading(false);
+      getMusic(localStorage.getItem("token"));
+    } catch (error) {
+      setLoading(false);
+      setMessage("Try again");
     }
-    console.log(response);
-    setMessage(response.data.message);
-    getMusic(localStorage.getItem("token"));
   };
 
   const handleClose = () => {
@@ -163,37 +205,61 @@ const Dashboard = () => {
           Search
         </Button>
       </Box>
-      {!results.length && (
+      {loading && (
         <Typography variant='h6' color='error'>
-          Loading...
+          <CircularProgress color='secondary' />
         </Typography>
       )}
       {/* Results */}
-      {typeof results === "string" ? (
+      {typeof results === "string" && !loading ? (
         <Typography variant='h6' color='error'>
           {results}
         </Typography>
       ) : (
         <Grid container spacing={3}>
           {results?.map((music) => (
-            <Grid item xs={12} sm={6} md={4} key={music.music_id}>
-              <Card sx={{ maxWidth: 345 }}>
+            <Grid item xs={12} sm={6} md={3} key={music.music_id}>
+              <Card
+                sx={{
+                  maxWidth: 300,
+                  minHeight: 400,
+                  maxHeight: 400,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "start",
+                  justifyContent: "space-between",
+                }}
+              >
                 <CardMedia
+                  sx={{
+                    minWidth: 300,
+                    minHeight: 200,
+                    maxWidth: 300,
+                    maxHeight: 200,
+                  }}
                   component='img'
-                  height='200'
-                  width='300'
-                  image={`data:image/jpeg;base64,${music.img_url}`}
+                  image={`data:image/jpeg;base64,${
+                    imgBase64[music?.img_url || music?.img]
+                  }`}
                   alt='Music Cover'
                 />
                 <CardContent>
-                  <Typography variant='h6'>{music.title}</Typography>
+                  <Typography variant='h6' sx={{ color: "darkcyan" }}>
+                    {music.title}
+                  </Typography>
                   <Typography color='textSecondary'>
                     {music.year} | {music.artist}
                   </Typography>
                   <Typography variant='body2'>{music.album}</Typography>
                 </CardContent>
-                <Button onClick={() => handleSubscribe(music.music_id)}>
-                  {!subscribe ? "Subscribe" : "Unsubscribe"}
+                <Button
+                  sx={{ width: "100%" }}
+                  variant='contained'
+                  onClick={() => handleSubscribe(music.music_id)}
+                >
+                  <Typography textAlign='center'>
+                    {!subscribe ? "Subscribe" : "Unsubscribe"}
+                  </Typography>
                 </Button>
               </Card>
             </Grid>
@@ -202,10 +268,9 @@ const Dashboard = () => {
       )}
       <Snackbar
         open={!!message}
-        autoHideDuration={6000}
+        autoHideDuration={3000}
         onClose={handleClose}
         message={message}
-        // action={action}
       />
     </Container>
   );
