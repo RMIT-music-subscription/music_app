@@ -137,6 +137,14 @@ const Dashboard = () => {
     setMessage("");
   };
 
+  const handleCancel = () => {
+    setTitle("");
+    setArtist("");
+    setAlbum("");
+    setYear("");
+    getMusic(localStorage.getItem("token"));
+  };
+
   useEffect(() => {
     const storedData = localStorage.getItem("token");
     if (storedData) {
@@ -196,14 +204,24 @@ const Dashboard = () => {
           onChange={(e) => setYear(e.target.value)}
           fullWidth
         />
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={handleSearch}
-          sx={{ alignSelf: "center", width: "50%" }}
-        >
-          Search
-        </Button>
+        <Box sx={{ display: "flex", justifyContent: "space-evenly" }}>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={handleSearch}
+            sx={{ alignSelf: "center", width: "40%" }}
+          >
+            Search
+          </Button>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={handleCancel}
+            sx={{ alignSelf: "center", width: "40%" }}
+          >
+            Reset
+          </Button>
+        </Box>
       </Box>
       {loading && (
         <Typography variant='h6' color='error'>
@@ -258,7 +276,7 @@ const Dashboard = () => {
                   onClick={() => handleSubscribe(music.music_id)}
                 >
                   <Typography textAlign='center'>
-                    {!subscribe ? "Subscribe" : "Unsubscribe"}
+                    {!subscribe ? "Subscribe" : "Remove"}
                   </Typography>
                 </Button>
               </Card>
