@@ -41,11 +41,11 @@ const Dashboard = () => {
         token: storedData,
       });
 
-      if (response.data.body) {
+      if (!response.data.body?.error) {
         setResults(response.data.body.music);
         setImgBase64(response.data.body.img_base64);
       } else {
-        setMessage(response.data.body.error);
+        setResults(response.data.body.error);
       }
       setSubscribe(true);
 
@@ -124,7 +124,7 @@ const Dashboard = () => {
           setMessage(response.data.body.error);
         }
       }
-
+      resetMenu();
       setLoading(false);
       getMusic(localStorage.getItem("token"));
     } catch (error) {
@@ -136,12 +136,14 @@ const Dashboard = () => {
   const handleClose = () => {
     setMessage("");
   };
-
-  const handleCancel = () => {
+  const resetMenu = () => {
     setTitle("");
     setArtist("");
     setAlbum("");
     setYear("");
+  };
+  const handleCancel = () => {
+    resetMenu();
     getMusic(localStorage.getItem("token"));
   };
 
